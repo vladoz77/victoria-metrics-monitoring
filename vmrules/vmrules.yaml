@@ -1,0 +1,83 @@
+serviceAccount:
+  create: false
+server:
+  nameOverride: vmrules
+  fullnameOverride: vmrules
+  replicaCount: 2
+  datasource:
+    url:  "http://vmselect.monitoring.svc.cluster.local:8481/select/0/prometheus/"
+  remote:
+    write:
+      url: "http://vminsert.monitoring.svc.cluster.local:8480/insert/0/prometheus/"
+  notifier:
+    alertmanager:
+      url: http://alertmanager.monitoring.svc.cluster.local:9093
+  extraArgs:
+    evaluationInterval: 1m
+    external.url: https://vmrules.dev.local
+    rule: 
+      - /rules/*/*.yaml
+
+  affinity:
+    podAntiAffinity:  
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values: [vmrules]
+          topologyKey: kubernetes.io/hostname
+
+  resources:
+    requests:
+      cpu: 15m
+      memory: 25M
+    limits:
+      cpu: 30m
+      memory: 100M
+
+  extraVolumes:
+    - name: alertmanager-rules
+      configMap:
+        name: alertmanager-rules
+    - name: node-rules
+      configMap:
+        name: node-rules
+    - name: kubernetes-rules
+      configMap:
+        name: kubernetes-rules
+    - name: minio-rules
+      configMap:
+        name: minio-rules
+
+  extraVolumeMounts:
+    - name: alertmanager-rules
+      mountPath: /rules/alertmanager-rules
+    - name: node-rules
+      mountPath: /rules/node-rules
+    - name: kubernetes-rules
+      mountPath: /rules/kubernetes-rules
+    - name: minio-rules
+      mountPath: /rules/minio-rules
+      
+  service:
+    enabled: true
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "8880"
+  
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: ca-issuer
+    hosts:
+    - name: vmrules.dev.local
+      path: /
+      port: 8880
+    tls:
+    - secretName: vmalert-tls
+      hosts:
+        - vmrules.dev.local
+
+alertmanager:
+  enabled: false

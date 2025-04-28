@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-rules
+  namespace: monitoring
+data:
+  kubernetes-alert.yaml: |
+    groups:
+    - name: kubernetes.alert
+      rules:
+        # Kubernetes Node not ready
+        - alert: KubernetesNodeNotReady
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 10m
+          labels:
+            severity: critical
+            type: kubernetes
+          annotations:
+            summary: Kubernetes Node not ready (instance {{ $labels.instance }})
+            description: "Node {{ $labels.node }} has been unready for a long time"
+        
+
+        # Kubernetes PersistentVolumeClaim pending
+        - alert: KubernetesPersistentvolumeclaimPending
+          expr: kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes PersistentVolumeClaim pending (instance {{ $labels.instance }})
+            description: "PersistentVolumeClaim {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is pending"
+        
+        # Kubernetes Volume out of disk space
+        - alert: KubernetesVolumeOutOfDiskSpace
+          expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes * 100 < 10
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes Volume out of disk space (instance {{ $labels.instance }})
+            description: "Volume is almost full (< 10% left)"
+
+        # Kubernetes Node out of pod capacity
+        - alert: KubernetesNodeOutOfPodCapacity
+          expr: sum by (node) ((kube_pod_status_phase{phase="Running"} == 1) + on(uid) group_left(node) (0 * kube_pod_info{pod_template_hash=""})) / sum by (node) (kube_node_status_allocatable{resource="pods"}) * 100 > 90
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes Node out of pod capacity (instance {{ $labels.instance }})
+            description: "Node {{ $labels.node }} is out of pod capacity\n  VALUE = {{ $value }}\n"
+
+        # Kubernetes PersistentVolume error
+        - alert: KubernetesPersistentvolumeError
+          expr: kube_persistentvolume_status_phase{phase=~"Failed|Pending", job="kube-state-metrics"} > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: Kubernetes PersistentVolume error (instance {{ $labels.instance }})
+            description: "Persistent volume {{ $labels.persistentvolume }} is in bad state"
+
+        # Kubernetes StatefulSet down
+        - alert: KubernetesStatefulsetDown
+          expr: kube_statefulset_replicas != kube_statefulset_status_replicas_ready > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: Kubernetes StatefulSet down (instance {{ $labels.instance }})
+            description: "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} went down"
+
+        # Kubernetes Pod not healthy
+        - alert: KubernetesPodNotHealthy
+          expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: Kubernetes Pod not healthy (instance {{ $labels.instance }})
+            description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has been in a non-running state for longer than 15 minutes."
+
+        #   
+        - alert: KubernetesPodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total[1m]) > 3
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes pod crash looping (instance {{ $labels.node }})
+            description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} is crash looping"
+
+
+        
+
+
+
+
+
+
+
+
+   
+
+
+                                  

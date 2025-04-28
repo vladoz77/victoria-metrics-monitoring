@@ -1,0 +1,87 @@
+vmselect:
+  enabled: true
+  replicaCount: 3
+  name: vmselect
+  fullnameOverride: vmselect
+  extraArgs:
+    replicationFactor: 3
+    dedup.minScrapeInterval: 10s
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8481"
+  affinity:
+    podAntiAffinity:  
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values: [vmselect]
+        topologyKey: kubernetes.io/hostname
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+
+vminsert:
+  enabled: true
+  name: vminsert
+  fullnameOverride: vminsert
+  replicaCount: 3
+  extraArgs:
+    replicationFactor: 3
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8480"
+  affinity:
+    podAntiAffinity:  
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values: [vminsert]
+        topologyKey: kubernetes.io/hostname
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+  
+
+vmstorage:
+  enabled: true
+  name: vmstorage
+  replicaCount: 3
+  fullnameOverride: vmstorage
+  extraArgs:
+    retentionPeriod: 30d
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8482"
+  affinity:
+    podAntiAffinity:  
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values: [vmstorage]
+        topologyKey: kubernetes.io/hostname
+  persistentVolume:
+    enabled: true
+    storageClass: longhorn-db
+    mountPath: /storage
+    size: 8Gi
+  requests:
+    cpu: 50m
+    memory: 500M
+  limits:
+    cpu: 100m
+    memory: 1024M
+  
