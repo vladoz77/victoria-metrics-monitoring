@@ -78,10 +78,11 @@ vmstorage:
     storageClass: longhorn-db
     mountPath: /storage
     size: 8Gi
-  requests:
-    cpu: 50m
-    memory: 500M
-  limits:
-    cpu: 100m
-    memory: 1024M
+  resources:
+    requests:
+      cpu: 50m
+      memory: 500M
+    limits:
+      cpu: 100m
+      memory: 1024M
   

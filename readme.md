@@ -13,16 +13,16 @@ helm upgrade --install -n monitoring kube-state-metrics prometheus-community/kub
 3. Install vmsingle or vmcluster
 
 ```bash
-helm install vmsingle vm/victoria-metrics-single -f vmsingle/vmsingle.yaml -n monitoring --create-namespace
+helm upgrade --install vmsingle vm/victoria-metrics-single -f vmsingle/vmsingle.yaml -n monitoring --create-namespace
 ```
 
 ```bash
-helm install vmcluster -n monitoring vm/victoria-metrics-cluster -f vmcluster/vmcluster.yaml --create-namespace
+helm upgrade --install vmcluster -n monitoring vm/victoria-metrics-cluster -f vmcluster/vmcluster.yaml --create-namespace
 ```
 4. Install vmagent
 
 ```bash
-helm install vmagent vm/victoria-metrics-agent  -f vmagent/vmagent.yaml -n monitoring --create-namespace
+helm upgrade --install vmagent vm/victoria-metrics-agent  -f vmagent/vmagent.yaml -n monitoring --create-namespace
 ```
 
 5. Install alertmanager and vmrules
@@ -36,7 +36,7 @@ kubectl apply -f alertmanager/manifests
 5. Install grafana
 
 ```bash
-helm install grafana grafana/grafana -n monitoring -f grafana/grafana.yaml --create-namespace
+helm upgrade --install grafana grafana/grafana -n monitoring -f grafana/grafana.yaml --create-namespace
 ```
 
 *get grafana password*
