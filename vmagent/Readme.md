@@ -1,4 +1,4 @@
-# Создаем секрет из файлов сертификата
+## Создаем секрет из файлов сертификата
 ```bash
 kubectl create secret generic etcd-ca \
 --from-file /etc/kubernetes/pki/etcd/server.crt \
@@ -7,7 +7,7 @@ kubectl create secret generic etcd-ca \
 ```
 
 
-
+## О конфигурации
 ```yaml
 # === Базовая конфигурация ===
 replicaCount: 3                     # 3 реплики для отказоустойчивости
