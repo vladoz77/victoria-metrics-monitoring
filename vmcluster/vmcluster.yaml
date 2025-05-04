@@ -31,10 +31,10 @@ vmselect:
   #       topologyKey: kubernetes.io/hostname
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 100m
+      cpu: 200m
       memory: 256Mi
 
 vminsert:
@@ -69,10 +69,10 @@ vminsert:
   #       topologyKey: kubernetes.io/hostname
   resources:
     requests:
-      cpu: 50m
+      cpu: 1000m
       memory: 128Mi
     limits:
-      cpu: 100m
+      cpu: 200m
       memory: 256Mi
   
 
