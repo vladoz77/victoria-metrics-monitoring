@@ -1,6 +1,6 @@
 vmselect:
   enabled: true
-  replicaCount: 3
+  replicaCount: 2
   name: vmselect
   fullnameOverride: vmselect
   extraArgs:
@@ -9,49 +9,71 @@ vmselect:
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8481"
-  affinity:
-    podAntiAffinity:  
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-          - key: app
-            operator: In
-            values: [vmselect]
-        topologyKey: kubernetes.io/hostname
+  horizontalPodAutoscaler:
+    enabled: true
+    maxReplicas: 5
+    minReplicas: 2
+    metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  # affinity:
+  #   podAntiAffinity:  
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values: [vmselect]
+  #       topologyKey: kubernetes.io/hostname
   resources:
-    limits:
-      cpu: 100m
-      memory: 200Mi
     requests:
       cpu: 50m
-      memory: 100Mi
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
 
 vminsert:
   enabled: true
   name: vminsert
   fullnameOverride: vminsert
-  replicaCount: 3
+  replicaCount: 2
   extraArgs:
     replicationFactor: 3
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8480"
-  affinity:
-    podAntiAffinity:  
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-          - key: app
-            operator: In
-            values: [vminsert]
-        topologyKey: kubernetes.io/hostname
+  horizontalPodAutoscaler:
+    enabled: true
+    maxReplicas: 5
+    minReplicas: 2
+    metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70 
+  # affinity:
+  #   podAntiAffinity:  
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values: [vminsert]
+  #       topologyKey: kubernetes.io/hostname
   resources:
-    limits:
-      cpu: 100m
-      memory: 200Mi
     requests:
       cpu: 50m
-      memory: 100Mi
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
   
 
 vmstorage:
@@ -80,9 +102,9 @@ vmstorage:
     size: 8Gi
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 500M
     limits:
-      cpu: 100m
-      memory: 1024M
+      cpu: 200m
+      memory: 1000M
   
