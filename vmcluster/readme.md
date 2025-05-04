@@ -1,139 +1,59 @@
-Вот детальное описание вашей конфигурации кластера VictoriaMetrics в стиле аналогичном описанию vmsingle, но для кластерного режима:
+# Victoria Metrics Cluster Helm Configuration
 
-```yaml
-# === Глобальные настройки ===
-rbac:
-  create: false         # Использовать существующие RBAC-роли
-serviceAccount:
-  create: false         # Использовать существующий ServiceAccount
+This document describes the configuration for Victoria Metrics Cluster deployment using Helm.
 
-# === vmselect ===
-# Компонент для выполнения запросов (аналог читающего узла БД)
-vmselect:
-  enabled: true         # Включение компонента
-  replicaCount: 3       # 3 реплики для отказоустойчивости
-  fullnameOverride: vmselect  # Фиксированное имя ресурсов
-  
-  # Параметры работы:
-  extraArgs:
-    replicationFactor: 3  # При выполнении запросов через vmselect, система выбирает одну из доступных копий данных (обычно самую ближайшую или наиболее доступную).
-    dedup.minScrapeInterval: 10s  # Дедупликация метрик в 10-секундном окне
+## Components Configuration
 
-  # Распределение подов:
-  affinity:
-    podAntiAffinity:  
-      requiredDuringSchedulingIgnoredDuringExecution:  # Жесткое требование
-      - labelSelector:
-          matchExpressions:
-          - key: app
-            operator: In
-            values: [vmselect]
-        topologyKey: kubernetes.io/hostname  # Разные физические ноды
+### vmselect
+- **Role**: Query component that processes user requests
+- **Replicas**: 2 (scales up to 5 based on CPU usage)
+- **Replication Factor**: 3
+- **Resources**: 
+  - Requests: 100m CPU, 128Mi Memory
+  - Limits: 200m CPU, 256Mi Memory
+- **HPA**: Enabled (target CPU utilization 70%)
 
-  # Ресурсы (минимальные):
-  resources:
-    limits:
-      cpu: 100m       # Лимит: 0.1 ядра CPU
-      memory: 200Mi   # Лимит: 200 MiB RAM
-    requests:
-      cpu: 50m        # Гарантировано: 0.05 ядра CPU
-      memory: 100Mi   # Гарантировано: 100 MiB RAM
+### vminsert
+- **Role**: Data ingestion component
+- **Replicas**: 2 (scales up to 5 based on CPU usage)
+- **Replication Factor**: 3
+- **Resources**:
+  - Requests: 100m CPU, 128Mi Memory
+  - Limits: 200m CPU, 256Mi Memory
+- **HPA**: Enabled (target CPU utilization 70%)
 
-  # Мониторинг:
-  podAnnotations:
-    prometheus.io/scrape: "true"  # Разрешить сбор метрик
-    prometheus.io/port: "8481"    # Порт метрик vmselect
+### vmstorage
+- **Role**: Persistent storage component
+- **Replicas**: 3 (recommended for high availability)
+- **Retention**: 30 days
+- **Storage**:
+  - Class: longhorn-db
+  - Size: 8Gi per pod
+  - Mount path: /storage
+- **Anti-Affinity**: Pods distributed across different nodes
+- **Resources**:
+  - Requests: 100m CPU, 500Mi Memory
+  - Limits: 200m CPU, 1000Mi Memory
 
-# === vminsert ===
-# Компонент для приема метрик (аналог пишущего узла БД)
-vminsert:
-  enabled: true         # Включение компонента
-  replicaCount: 3       # 3 реплики для балансировки нагрузки
-  fullnameOverride: vminsert  # Фиксированное имя ресурсов
-  
-  # Параметры работы:
-  extraArgs:
-    replicationFactor: 3  # Когда данные поступают в vminsert, он направляет их в три разных пода vmstorage (так как replicationFactor равен 3).
+## Important Notes
 
-  # Распределение подов (аналогично vmselect):
-  affinity: ... 
+1. The configuration uses pod anti-affinity rules for vmstorage to ensure high availability.
+2. All components expose Prometheus metrics on their respective ports.
+3. The replication factor is set to 3 for data redundancy.
+4. Horizontal Pod Autoscaler is configured for vmselect and vminsert components.
+5. Persistent storage is required for vmstorage pods to retain metrics data.
 
-  # Ресурсы (аналогично vmselect):
-  resources: ... 
+## Customization
 
-  # Мониторинг:
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8480"
+To modify the configuration:
+1. Edit the `vmcluster.yaml` values file
+2. Adjust parameters as needed (replicas, resources, retention period, etc.)
+3. Commit changes to your Git repository
+4. Argo CD will automatically sync the changes (if auto-sync is enabled)
 
-# === vmstorage ===
-# Компонент хранения (аналог persistent слоя БД)
-vmstorage:
-  enabled: true         # Включение компонента
-  replicaCount: 3       # 3 реплики для кворума (N/2+1)
-  fullnameOverride: vmstorage  # Фиксированное имя ресурсов
-  
-  # Параметры работы:
-  extraArgs:
-    retentionPeriod: 30d  # Автоудаление данных старше 30 дней
+## Monitoring
 
-  # Распределение подов (аналогично vmselect):
-  affinity: ...
-
-  # Хранилище:
-  persistentVolume:
-    enabled: true       # Включить постоянное хранилище
-    storageClass: longhorn-db  # Использовать распределенный storageClass
-    mountPath: /storage # Путь монтирования
-    size: 8Gi           # Размер тома (рекомендуется 50Gi+ для production)
-
-  # Ресурсы:
-  resources:
-    limits:
-      cpu: 100m       # Лимит: 0.1 ядра CPU
-      memory: 1024Mi  # Лимит: 1 GiB RAM
-    requests:
-      cpu: 50m        # Гарантировано: 0.05 ядра CPU
-      memory: 500Mi    # Гарантировано: 500 MiB RAM
-
-  # Мониторинг:
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8482"
-```
-
-### Ключевые особенности:
-
-1. **Архитектура HA**:
-   - Все компоненты развернуты в 3 репликах
-   - Строгий podAntiAffinity для распределения по разным нодам
-   - Коэффициент репликации данных = 3
-
-2. **Хранение данных**:
-   - Используется распределенное хранилище (longhorn-db)
-   - Автоматическое удаление старых данных через 30 дней
-   - Минимальный объем диска (8Gi) - требует увеличения для production
-
-3. **Мониторинг**:
-   - Все компоненты экспортируют метрики на стандартных портах
-   - Аннотации для автоматического обнаружения Prometheus
-
-4. **Ресурсы**:
-   - Указаны минимальные значения (недостаточные для production)
-   - Для production рекомендуется:
-     - vmselect: 1 CPU / 1Gi RAM
-     - vminsert: 2 CPU / 2Gi RAM
-     - vmstorage: 2 CPU / 4Gi RAM
-
-
-### Проверка работы:
-```bash
-# Проверить распределение подов:
-kubectl get pods -l 'app in (vmselect,vminsert,vmstorage)' -o wide
-
-# Проверить логи vmstorage:
-kubectl logs -f <vmstorage-pod> | grep -i error
-
-# Проверить метрики:
-curl http://<vmselect-service>:8481/metrics | grep -i health
-```
+All components are annotated for Prometheus scraping:
+- vmselect: port 8481
+- vminsert: port 8480
+- vmstorage: port 8482

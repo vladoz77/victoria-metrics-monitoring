@@ -1,110 +1,90 @@
 vmselect:
-  enabled: true
-  replicaCount: 2
-  name: vmselect
-  fullnameOverride: vmselect
+  enabled: true               # Включить компонент vmselect
+  replicaCount: 2             # Количество реплик
+  name: vmselect              # Базовое имя ресурсов
+  fullnameOverride: vmselect  # Полное имя ресурсов (переопределение)
   extraArgs:
-    replicationFactor: 3
-    dedup.minScrapeInterval: 10s
+    replicationFactor: 3      # Фактор репликации данных
+    dedup.minScrapeInterval: 10s  # Минимальный интервал между сборами метрик для дедупликации
   podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8481"
+    prometheus.io/scrape: "true"  # Аннотации для обнаружения Prometheus
+    prometheus.io/port: "8481"    # Порт для метрик
   horizontalPodAutoscaler:
-    enabled: true
-    maxReplicas: 5
-    minReplicas: 2
+    enabled: true             # Включить автоматическое масштабирование
+    maxReplicas: 5            # Максимальное количество реплик
+    minReplicas: 2           # Минимальное количество реплик
     metrics:
-    - type: Resource
+    - type: Resource          # Метрика для масштабирования (CPU)
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70
-  # affinity:
-  #   podAntiAffinity:  
-  #     requiredDuringSchedulingIgnoredDuringExecution:
-  #     - labelSelector:
-  #         matchExpressions:
-  #         - key: app
-  #           operator: In
-  #           values: [vmselect]
-  #       topologyKey: kubernetes.io/hostname
+          averageUtilization: 70  # Целевая загрузка CPU
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 100m              # Запрашиваемые ресурсы CPU (0.1 ядра)
+      memory: 128Mi          # Запрашиваемая память
     limits:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 200m              # Лимит CPU (0.2 ядра)
+      memory: 256Mi          # Лимит памяти
 
 vminsert:
-  enabled: true
-  name: vminsert
-  fullnameOverride: vminsert
-  replicaCount: 2
+  enabled: true               # Включить компонент vminsert
+  name: vminsert              # Базовое имя ресурсов
+  fullnameOverride: vminsert  # Полное имя ресурсов
+  replicaCount: 2             # Количество реплик
   extraArgs:
-    replicationFactor: 3
+    replicationFactor: 3      # Фактор репликации данных
   podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8480"
+    prometheus.io/scrape: "true"  # Аннотации для Prometheus
+    prometheus.io/port: "8480"    # Порт для метрик
   horizontalPodAutoscaler:
-    enabled: true
-    maxReplicas: 5
-    minReplicas: 2
+    enabled: true             # Включить HPA
+    maxReplicas: 5            # Максимальное количество реплик
+    minReplicas: 2           # Минимальное количество реплик
     metrics:
-    - type: Resource
+    - type: Resource          # Метрика для масштабирования (CPU)
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70 
-  # affinity:
-  #   podAntiAffinity:  
-  #     requiredDuringSchedulingIgnoredDuringExecution:
-  #     - labelSelector:
-  #         matchExpressions:
-  #         - key: app
-  #           operator: In
-  #           values: [vminsert]
-  #       topologyKey: kubernetes.io/hostname
+          averageUtilization: 70  # Целевая загрузка CPU
   resources:
     requests:
-      cpu: 100m
+      cpu: 100m              # Запрашиваемые ресурсы
       memory: 128Mi
     limits:
-      cpu: 200m
+      cpu: 200m              # Лимиты ресурсов
       memory: 256Mi
-  
 
 vmstorage:
-  enabled: true
-  name: vmstorage
-  replicaCount: 3
-  fullnameOverride: vmstorage
+  enabled: true               # Включить компонент vmstorage
+  name: vmstorage             # Базовое имя ресурсов
+  replicaCount: 3             # Количество реплик (рекомендуется нечетное число)
+  fullnameOverride: vmstorage # Полное имя ресурсов
   extraArgs:
-    retentionPeriod: 30d
+    retentionPeriod: 30d      # Период хранения данных (30 дней)
   podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8482"
+    prometheus.io/scrape: "true"  # Аннотации для Prometheus
+    prometheus.io/port: "8482"    # Порт для метрик
   affinity:
-    podAntiAffinity:  
+    podAntiAffinity:          # Анти-аффинити для распределения pod'ов
       requiredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
           matchExpressions:
           - key: app
             operator: In
             values: [vmstorage]
-        topologyKey: kubernetes.io/hostname
+        topologyKey: kubernetes.io/hostname  # Размещать на разных нодах
   persistentVolume:
-    enabled: true
-    storageClass: longhorn-db
-    mountPath: /storage
-    size: 8Gi
+    enabled: true             # Включить постоянное хранилище
+    storageClass: longhorn-db  # Класс хранилища (Longhorn)
+    mountPath: /storage       # Путь монтирования
+    size: 8Gi                # Размер тома
   resources:
     requests:
-      cpu: 100m
+      cpu: 100m              # Запрашиваемые ресурсы
       memory: 500M
     limits:
-      cpu: 200m
+      cpu: 200m              # Лимиты ресурсов
       memory: 1000M
-  
