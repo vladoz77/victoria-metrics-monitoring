@@ -25,11 +25,19 @@ resources:
 extraVolumeMounts:
 - name: etcd-tls-volume
   mountPath: /tls/etcd-tls
+  readonly: true
+- name: ca-bundle
+  mountPath: /etc/ssl/certs/trust-bundle.pem
+  subPath: trust-bundle.pem
+  readOnly: true
 
 extraVolumes:
 - name: etcd-tls-volume
   secret:
     secretName: etcd-ca
+- name: ca-bundle
+  configMap:
+    name: trust-ca
 
 remoteWrite:
   - url: "http://vminsert.monitoring.svc.cluster.local:8480/insert/0/prometheus/"
@@ -86,6 +94,7 @@ config:
       insecure_skip_verify: true
       cert_file: /tls/etcd-tls/server.crt
       key_file: /tls/etcd-tls/server.key
+      ca_file: /etc/ssl/certs/trust-bundle.pem
     relabel_configs:
     - source_labels: [ __meta_kubernetes_pod_label_component ]
       regex: etcd
@@ -332,6 +341,62 @@ config:
     - source_labels: [ __meta_kubernetes_service_name ]
       target_label: job
 
+  #Kube-state-metrics
+  - job_name: kube-state-metrics
+    honor_labels: true
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - monitoring
+    relabel_configs:
+    - source_labels: [ __meta_kubernetes_service_label_app_kubernetes_io_name ]
+      regex: kube-state-metrics
+      action: keep
+    - action: keep
+      source_labels: [ __meta_kubernetes_endpoint_port_name ]
+      regex: http
+    - source_labels: [ __meta_kubernetes_pod_node_name ]
+      target_label: node
+    - source_labels: [ __meta_kubernetes_namespace ]
+      target_label: namespace
+    - source_labels: [ __meta_kubernetes_service_name ]
+      target_label: service
+    - source_labels: [ __meta_kubernetes_pod_name ]
+      target_label: pod
+    - source_labels: [ __meta_kubernetes_pod_container_name ]
+      target_label: container
+    - source_labels: [ __meta_kubernetes_service_name ]
+      target_label: job
+
+  #Node-exporter   
+  - job_name: node-exporter
+    honor_labels: true
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - monitoring
+    relabel_configs:
+    - source_labels: [ __meta_kubernetes_service_label_app_kubernetes_io_name ]
+      regex: node-exporter
+      action: keep
+    - action: keep
+      source_labels: [ __meta_kubernetes_endpoint_port_name ]
+      regex: metrics
+    - source_labels: [ __meta_kubernetes_pod_name ]
+      target_label: pod
+    - source_labels: [ __meta_kubernetes_pod_container_name ]
+      target_label: container
+    - source_labels: [ __meta_kubernetes_namespace ]
+      target_label: namespace
+    - source_labels: [ __meta_kubernetes_service_name ]
+      target_label: service
+    - source_labels: [ __meta_kubernetes_service_name ]
+      target_label: job
+    - source_labels: [ __meta_kubernetes_endpoint_node_name ]
+      target_label: node
+
   # Autodiscover endpoint with annotaions
   - job_name: kubernetes-endpoints
     kubernetes_sd_configs:
@@ -368,6 +433,8 @@ config:
       target_label: node
     - source_labels: [ __meta_kubernetes_service_name ]
       target_label: job
+    - source_labels: [ __meta_kubernetes_service_name ]
+      target_label: service
 
   # Autodiscover pod with annotaions
   - job_name: "kubernetes-pods"
