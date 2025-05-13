@@ -4,7 +4,7 @@ metadata:
   name: kube-state-metrics
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    - resources-finalizer.argocd.argoproj.io/background
   labels:
     app: kube-state-metrics
 spec:
@@ -12,7 +12,7 @@ spec:
   sources:
   - repoURL: https://prometheus-community.github.io/helm-charts 
     chart: kube-state-metrics
-    targetRevision: 5.19.0
+    targetRevision: 5.33.0
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring

@@ -5,7 +5,10 @@ metadata:
   namespace: argocd
 spec:
   sourceRepos:
-  - '*'
+  - https://github.com/vladoz77/victoria-metrics-monitoring.git
+  - https://victoriametrics.github.io/helm-charts/ 
+  - https://prometheus-community.github.io/helm-charts
+  - https://grafana.github.io/helm-charts
   destinations:
   - namespace: monitoring
     server: https://kubernetes.default.svc

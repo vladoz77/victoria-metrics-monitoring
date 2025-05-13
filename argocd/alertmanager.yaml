@@ -4,15 +4,15 @@ metadata:
   name: alertmanager
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    - resources-finalizer.argocd.argoproj.io/background
   labels:
     app: alertmanager
 spec:
   project: monitoring
   sources:
-  - repoURL: https://github.com/vladoz77/argocd.git
+  - repoURL: https://github.com/vladoz77/victoria-metrics-monitoring.git
     targetRevision: HEAD 
-    path: monitoring-single/alertmanager/manifests
+    path: alertmanager/manifests
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring

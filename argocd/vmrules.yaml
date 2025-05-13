@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vmalert
+  name: vmrules
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    - resources-finalizer.argocd.argoproj.io/background
   labels:
-    app: vmalert
+    app: vmrules
 spec:
   project: monitoring
   sources:
-  - repoURL: https://github.com/vladoz77/argocd.git
+  - repoURL: https://github.com/vladoz77/victoria-metrics-monitoring.git
     targetRevision: HEAD 
     ref: myRepo
   - repoURL: https://victoriametrics.github.io/helm-charts/ 
@@ -18,10 +18,10 @@ spec:
     targetRevision: 0.9.8
     helm:
       valueFiles:
-        - $myRepo/monitoring-single/vmalert/vmalert-k8s.yaml
-  - repoURL: https://github.com/vladoz77/argocd.git
+        - $myRepo/vmrules/vmrules.yaml
+  - repoURL: https://github.com/vladoz77/victoria-metrics-monitoring.git
     targetRevision: HEAD 
-    path: monitoring-single/vmalert/rules
+    path: vmrules/rules
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring

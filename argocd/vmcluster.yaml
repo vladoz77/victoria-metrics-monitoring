@@ -10,15 +10,15 @@ metadata:
 spec:
   project: monitoring
   sources:
-  - repoURL: https://github.com/vladoz77/argocd.git
+  - repoURL: https://github.com/vladoz77/victoria-metrics-monitoring.git
     targetRevision: HEAD 
     ref: myRepo
   - repoURL: https://victoriametrics.github.io/helm-charts/ 
     chart: victoria-metrics-cluster
-    targetRevision: 0.11.21
+    targetRevision: 0.21.0
     helm:
       valueFiles:
-        - $myRepo/monitoring-single/vmcluster/vmcluster.yaml
+        - $myRepo/vmcluster/vmcluster.yaml
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring

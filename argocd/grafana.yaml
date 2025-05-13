@@ -4,21 +4,21 @@ metadata:
   name: grafana
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    - resources-finalizer.argocd.argoproj.io/background
   labels:
     app: grafana
 spec:
   project: monitoring
   sources:
-  - repoURL: https://github.com/vladoz77/argocd.git
+  - repoURL: https://github.com/vladoz77/victoria-metrics-monitoring.git
     targetRevision: HEAD 
     ref: myRepo
   - repoURL: https://grafana.github.io/helm-charts
     chart: grafana
-    targetRevision: 7.3.11 
+    targetRevision: 8.14.2
     helm:
       valueFiles:
-        - $myRepo/monitoring-single/grafana/grafana-k8s.yaml
+        - $myRepo/grafana/grafana.yaml
   # - repoURL: https://github.com/vladoz77/argocd.git
   #   targetRevision: HEAD 
   #   path: monitoring-single/grafana/manifests
